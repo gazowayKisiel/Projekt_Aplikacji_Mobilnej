@@ -22,40 +22,28 @@ class MovieViewModel : ViewModel() {
 
     private fun fetchMovies() {
         viewModelScope.launch {
-            // SYMULACJA NA REVIEW MEETING:
-            _isLoading.value = true
-
-            // Symulujemy opóźnienie internetu (pół sekundy)
-            kotlinx.coroutines.delay(500)
-
-            _movies.value = listOf(
-                Movie(
-                    id = 1,
-                    title = "Incepcja",
-                    description = "Dom Cobb jest zręcznym złodziejem, absolutnym mistrzem w niebezpiecznej sztuce ekstrakcji, polegającej na kradzieży cennych sekretów z podświadomości podczas snu.",
-                    posterUrl = "/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg"
-                ),
-                Movie(
-                    id = 2,
-                    title = "Venom: Ostatni Taniec",
-                    description = "Eddie i Venom uciekają. Ścigani przez oba ich światy i w obliczu zaciskającej się sieci, duet zmuszony jest podjąć druzgocącą decyzję.",
-                    posterUrl = "/aosm8NMQ3UyoBVpSxyimorCQykC.jpg"
-                )
-            )
-
-            _isLoading.value = false
-
-            /* --- ZAKOMENTOWANY PRAWDZIWY KOD NA PÓŹNIEJ ---
             try {
                 _isLoading.value = true
+
+                // --- PRAWDZIWE POBIERANIE Z BAZY ---
                 val response = RetrofitInstance.api.getMovies()
                 _movies.value = response.results
+
+                /* --- SYMULACJA / BACKUP NA WYPADEK AWARII (Zakomentowane) ---
+                kotlinx.coroutines.delay(500)
+                _movies.value = listOf(
+                    Movie(id = 1, title = "Incepcja", description = "...", posterUrl = "/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg"),
+                    Movie(id = 2, title = "Venom", description = "...", posterUrl = "/aosm8NMQ3UyoBVpSxyimorCQykC.jpg")
+                )
+                */
+
             } catch (e: Exception) {
+                // Jeśli API wywali błąd (np. brak internetu),
+                // tutaj możesz ewentualnie odkomentować listę testową jako "fallback"
                 e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
-            */
         }
     }
 }

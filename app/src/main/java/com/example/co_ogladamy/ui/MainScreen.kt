@@ -13,21 +13,55 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.co_ogladamy.model.Movie
 import com.example.co_ogladamy.viewmodel.MovieViewModel
-
+import com.example.co_ogladamy.viewmodel.RoomViewModel
 
 @Composable
-fun MainScreen(viewModel: MovieViewModel) {
+fun MainScreen(
+    viewModel: MovieViewModel,
+    roomViewModel: RoomViewModel,
+    onLeaveRoom: () -> Unit
+) {
     val movies by viewModel.movies.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        if (isLoading) {
-            CircularProgressIndicator()
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
-                items(movies) { movie ->
-                    MovieCard(movie)
-                    Spacer(modifier = Modifier.height(16.dp))
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // pasek z przyciskiem wyjscia
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Pokój: ${roomViewModel.currentRoomCode ?: "Brak"}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Button(
+                onClick = {
+                    // wywoluje usuniecie z Firebase i wraca do WelcomeScreen
+                    roomViewModel.leaveCurrentRoom(onNavigateBack = onLeaveRoom)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Wyjdź z pokoju")
+            }
+        }
+
+
+        // lista filmow
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+                    items(movies) { movie ->
+                        MovieCard(movie)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
@@ -39,7 +73,7 @@ fun MovieCard(movie: Movie) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp), // Odstęp między kartami
+            .padding(vertical = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
@@ -48,7 +82,7 @@ fun MovieCard(movie: Movie) {
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.66f), // Proporcja plakatu 2:3 (wysokość do szerokości)
+                    .aspectRatio(0.66f), // proporcja plakatu 2:3 (wysokosc-szerokosc)
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
 

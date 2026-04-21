@@ -1,15 +1,17 @@
+# Ustawienia lokalne i Android Studio
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.gradle/
+.idea/
 local.properties
+
+# Wygenerowane pliki budowania (Krytyczne!)
+build/
+*/build/
+
+# Profilowanie i kod natywny
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Pliki systemowe OS
+.DS_Store

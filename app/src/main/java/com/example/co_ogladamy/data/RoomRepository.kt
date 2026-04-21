@@ -63,7 +63,7 @@ class RoomRepository {
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {
-                    // TODO obsluga bledu
+                    // TODO: obsluga bledu
                 }
             })
     }

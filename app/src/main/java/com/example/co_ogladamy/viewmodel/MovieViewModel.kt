@@ -46,4 +46,36 @@ class MovieViewModel : ViewModel() {
             }
         }
     }
+    // Zmienna trzymająca film, z którym mamy "Match". Jeśli jest null - nie ma matcha.
+    private val _matchedMovie = MutableStateFlow<Movie?>(null)
+    val matchedMovie: StateFlow<Movie?> = _matchedMovie.asStateFlow()
+
+    // ----------------------------------------------
+    // --- MIEJSCE DLA CIEBIE MATI (FIREBASE) ---
+    // ----------------------------------------------
+
+    fun onSwipeRight(movie: Movie) {
+        // [KOLEGA TUTAJ WSTAWIA KOD FIREBASE]
+
+        // 1. Usuwamy przesunięty film z naszej listy, by pokazać kolejny
+        _movies.value = _movies.value.filter { it.id != movie.id }
+
+        // 2. Wywołujemy ekran Match dla tego filmu
+        _matchedMovie.value = movie
+    }
+
+    fun onSwipeLeft(movie: Movie) {
+        // [KOLEGA TUTAJ WSTAWIA KOD FIREBASE]
+
+        // 1. Odrzucamy film - znika z talii
+        _movies.value = _movies.value.filter { it.id != movie.id }
+    }
+
+    // ------------------------------------
+
+    // Funkcja zamykająca ekran Match i pozwalająca swipować dalej
+    fun dismissMatch() {
+        _matchedMovie.value = null
+    }
+
 }

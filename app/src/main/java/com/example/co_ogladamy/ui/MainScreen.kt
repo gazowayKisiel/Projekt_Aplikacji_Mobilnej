@@ -3,6 +3,8 @@ package com.example.co_ogladamy.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -21,7 +24,6 @@ import com.example.co_ogladamy.viewmodel.MovieViewModel
 import com.example.co_ogladamy.viewmodel.RoomViewModel
 import kotlin.math.roundToInt
 
-// --- TWOJA WŁASNA, NIEZAWODNA KARTA TINDEROWA ---
 @Composable
 fun SwipeableCard(
     onSwipeLeft: () -> Unit,
@@ -35,19 +37,13 @@ fun SwipeableCard(
     Box(
         modifier = modifier
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .graphicsLayer(
-                rotationZ = offsetX / 20f // Lekki obrót karty przy przesuwaniu - daje świetny efekt!
-            )
+            .graphicsLayer(rotationZ = offsetX / 20f)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragEnd = {
-                        // Jeśli przesunięto mocno w prawo lub lewo - zatwierdzamy
-                        if (offsetX > 250) {
-                            onSwipeRight()
-                        } else if (offsetX < -250) {
-                            onSwipeLeft()
-                        } else {
-                            // Jeśli za słabo, karta wraca na środek
+                        if (offsetX > 250) onSwipeRight()
+                        else if (offsetX < -250) onSwipeLeft()
+                        else {
                             offsetX = 0f
                             offsetY = 0f
                         }
@@ -62,7 +58,6 @@ fun SwipeableCard(
         content()
     }
 }
-// ------------------------------------------------
 
 @Composable
 fun MainScreen(
@@ -73,11 +68,32 @@ fun MainScreen(
     val movies by viewModel.movies.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val matchedMovie by viewModel.matchedMovie.collectAsState()
+    val allMatches by viewModel.allMatches.collectAsState() // NOWOŚĆ: Obserwujemy listę matchów
+
+    val roomCode = roomViewModel.currentRoomCode
+    val myUserId = roomViewModel.myUserId
+
+    // Stan kontrolujący wyświetlanie osobnego okna z listą matchów
+    var showMatchesDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(roomCode, myUserId) {
+        if (roomCode != null) {
+            viewModel.initRoom(roomCode, myUserId)
+        }
+    }
+
+    // Wyświetlanie osobnego okna z listą wszystkich matchów grupy
+    if (showMatchesDialog) {
+        MatchesListDialog(
+            matches = allMatches,
+            onDismiss = { showMatchesDialog = false }
+        )
+    }
 
     if (matchedMovie != null) {
         MatchScreen(
             movie = matchedMovie!!,
-            onContinue = { viewModel.dismissMatch() }
+            onContinue = { viewModel.dismissMatch() } // Kliknięcie chowa popup i odblokowuje dalsze szukanie!
         )
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -91,13 +107,24 @@ fun MainScreen(
                 Text(
                     text = "Pokój: ${roomViewModel.currentRoomCode ?: "Brak"}",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
                 )
-                Button(
-                    onClick = { roomViewModel.leaveCurrentRoom(onNavigateBack = onLeaveRoom) },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Wyjdź")
+
+                // Dynamiczny przycisk otwierający okno ze wszystkimi matchami
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { showMatchesDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Text("Matche (${allMatches.size})")
+                    }
+                    Button(
+                        onClick = { roomViewModel.leaveCurrentRoom(onNavigateBack = onLeaveRoom) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Wyjdź")
+                    }
                 }
             }
 
@@ -189,7 +216,7 @@ fun MatchScreen(movie: Movie, onContinue: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Oboje chcecie obejrzeć:",
+                text = "Grupa chce obejrzeć:",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.LightGray
             )
@@ -205,8 +232,69 @@ fun MatchScreen(movie: Movie, onContinue: () -> Unit) {
                 onClick = onContinue,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Green, contentColor = Color.Black)
             ) {
-                Text("Oglądamy! (Wróć)")
+                Text("Oglądamy dalej! (Wróć)")
             }
         }
     }
+}
+
+// Komponent osobnego okna (Dialogu) prezentujący dotychczasowe dopasowania pokoju
+@Composable
+fun MatchesListDialog(
+    matches: List<Movie>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Dopasowane filmy pokoju") },
+        text = {
+            if (matches.isEmpty()) {
+                Text("Brak dopasowań do tej pory. Głosujcie dalej!")
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(matches) { movie ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = "https://image.tmdb.org/t/p/w200${movie.posterUrl}",
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(60.dp, 90.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = movie.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = movie.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Zamknij")
+            }
+        }
+    )
 }

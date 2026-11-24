@@ -2,6 +2,7 @@ package com.example.co_ogladamy.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.co_ogladamy.model.AVAILABLE_GENRES
 import com.example.co_ogladamy.model.UserProfile
 import com.example.co_ogladamy.viewmodel.AuthViewModel
 import com.example.co_ogladamy.viewmodel.RoomViewModel
@@ -188,7 +190,41 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.weight(1f))
     }
 }
-
+@Composable
+fun GenreSelector(
+    selectedGenreId: Int?,
+    onGenreSelected: (Int?) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+    ) {
+        items(AVAILABLE_GENRES) { genre ->
+            FilterChip(
+                selected = selectedGenreId == genre.id,
+                onClick = { onGenreSelected(genre.id) },
+                label = { Text(genre.name) }
+            )
+        }
+    }
+}
+@Composable
+fun LobbyParticipantsCard(participants: List<String>) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "Uczestnicy w pokoju (${participants.size}):",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            participants.forEach { name ->
+                Text(text = "• $name", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
 @Composable
 fun FriendsDialog(
     friends: List<UserProfile>,

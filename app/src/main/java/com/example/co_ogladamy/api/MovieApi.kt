@@ -6,11 +6,16 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 interface MovieApi {
-    // Poprawiony endpoint: "movie/popular" zamiast "movies/popular"
-    @GET("movie/popular")
-    suspend fun getMovies(): MovieResponse
+    @GET("discover/movie")
+    suspend fun getMovies(
+        @Query("with_genres") genreId: Int? = null,
+        @Query("page") page: Int = 1,
+        @Query("language") language: String = "pl-PL",
+        @Query("sort_by") sortBy: String = "popularity.desc"
+    ): MovieResponse
 }
 
 object RetrofitInstance {
